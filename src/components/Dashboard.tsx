@@ -3,21 +3,24 @@ import { GameId, GAME_CONFIGS, UserData } from '../types/game';
 import { loadUserData, getBrainSpeedScore } from '../utils/storageManager';
 import { formatMinutes } from '../utils/statsCalculator';
 import { isMuted, setMuted } from '../utils/audio';
+import { AuthHandle } from '../hooks/useAuth';
 import BoosterReminder from './BoosterReminder';
 import ProgressTracker from './ProgressTracker';
+import AuthButton from './AuthButton';
 
 interface Props {
   onSelectGame: (gameId: GameId) => void;
+  auth: AuthHandle;
 }
 
-export default function Dashboard({ onSelectGame }: Props) {
+export default function Dashboard({ onSelectGame, auth }: Props) {
   const [userData, setUserData] = useState<UserData>(loadUserData);
   const [muted, setMutedState] = useState(isMuted());
   const [showProgress, setShowProgress] = useState(false);
 
   useEffect(() => {
     setUserData(loadUserData());
-  }, []);
+  }, [auth.authState]);
 
   const brainScore = getBrainSpeedScore(userData);
   const totalSessions = Object.values(userData.games).reduce((sum, g) => sum + g.sessionsCompleted, 0);
@@ -38,13 +41,16 @@ export default function Dashboard({ onSelectGame }: Props) {
             <h1 className="text-2xl font-semibold tracking-tight">BrainGames</h1>
             <p className="text-muted text-sm mt-0.5">Speed-of-Processing Training</p>
           </div>
-          <button
-            onClick={toggleMute}
-            className="text-muted hover:text-warm-white text-xl transition-colors p-2"
-            title={muted ? 'Unmute' : 'Mute'}
-          >
-            {muted ? '🔇' : '🔊'}
-          </button>
+          <div className="flex items-center gap-3">
+            <AuthButton auth={auth} />
+            <button
+              onClick={toggleMute}
+              className="text-muted hover:text-warm-white text-xl transition-colors p-2"
+              title={muted ? 'Unmute' : 'Mute'}
+            >
+              {muted ? '🔇' : '🔊'}
+            </button>
+          </div>
         </div>
       </header>
 

@@ -1,6 +1,11 @@
-import { UserData, DEFAULT_USER_DATA, GameId, SessionResult, GameStats } from '../types/game';
+import { UserData, DEFAULT_USER_DATA, GameId, SessionResult, GameStats, DEFAULT_GAME_STATS } from '../types/game';
+import { getSessionToken, saveProgress as apiSaveProgress, loadProgress as apiLoadProgress } from './api';
 
 const STORAGE_KEY = 'braingames_user_data';
+
+function isAuthenticated(): boolean {
+  return !!getSessionToken();
+}
 
 export function loadUserData(): UserData {
   try {
@@ -21,6 +26,10 @@ export function loadUserData(): UserData {
 
 export function saveUserData(data: UserData): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // Fire-and-forget server sync when authenticated
+  if (isAuthenticated()) {
+    apiSaveProgress(data).catch(() => {});
+  }
 }
 
 export function recordSession(session: SessionResult): UserData {
@@ -55,7 +64,6 @@ export function recordSession(session: SessionResult): UserData {
   const totalSessions = Object.values(data.games).reduce((sum, g) => sum + g.sessionsCompleted, 0);
   if (totalSessions >= 10 && !data.boosterStatus.initialComplete) {
     data.boosterStatus.initialComplete = true;
-    // Set booster due dates from first use
     const first = new Date(data.firstUseDate);
     const b1 = new Date(first);
     b1.setMonth(b1.getMonth() + 11);
@@ -68,6 +76,55 @@ export function recordSession(session: SessionResult): UserData {
 
   saveUserData(data);
   return data;
+}
+
+/** Sync from server after authentication — merges server + local data */
+export async function syncFromServer(): Promise<UserData> {
+  const serverData = await apiLoadProgress();
+  const localData = loadUserData();
+
+  if (!serverData) {
+    // No server data yet — push local to server
+    if (isAuthenticated()) {
+      apiSaveProgress(localData).catch(() => {});
+    }
+    return localData;
+  }
+
+  const merged = mergeUserData(localData, serverData);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  if (isAuthenticated()) {
+    apiSaveProgress(merged).catch(() => {});
+  }
+  return merged;
+}
+
+/** Merge strategy: take the max of each stat to avoid losing progress */
+function mergeUserData(local: UserData, server: UserData): UserData {
+  const merged: UserData = {
+    firstUseDate: local.firstUseDate < server.firstUseDate ? local.firstUseDate : server.firstUseDate,
+    totalTrainingMinutes: Math.max(local.totalTrainingMinutes, server.totalTrainingMinutes),
+    dailyStreak: Math.max(local.dailyStreak, server.dailyStreak),
+    lastPlayDate: local.lastPlayDate > server.lastPlayDate ? local.lastPlayDate : server.lastPlayDate,
+    games: {} as Record<GameId, GameStats>,
+    boosterStatus: local.boosterStatus.initialSessionCount >= server.boosterStatus.initialSessionCount
+      ? local.boosterStatus : server.boosterStatus,
+  };
+
+  for (const id of Object.keys(DEFAULT_USER_DATA.games) as GameId[]) {
+    const l = local.games[id] || { ...DEFAULT_GAME_STATS };
+    const s = server.games[id] || { ...DEFAULT_GAME_STATS };
+    merged.games[id] = {
+      sessionsCompleted: Math.max(l.sessionsCompleted, s.sessionsCompleted),
+      bestScore: Math.max(l.bestScore, s.bestScore),
+      highestLevel: Math.max(l.highestLevel, s.highestLevel),
+      totalTrials: Math.max(l.totalTrials, s.totalTrials),
+      recentScores: l.recentScores.length >= s.recentScores.length ? l.recentScores : s.recentScores,
+      accuracyHistory: l.accuracyHistory.length >= s.accuracyHistory.length ? l.accuracyHistory : s.accuracyHistory,
+    };
+  }
+
+  return merged;
 }
 
 export function getBrainSpeedScore(data: UserData): number {
@@ -86,14 +143,11 @@ export function getBrainSpeedScore(data: UserData): number {
 }
 
 export function getWeeklySessionCount(data: UserData): number {
-  // Approximate: count sessions completed this week based on last play date
-  // For a more accurate count we'd need session timestamps, but this gives a baseline
   if (!data.lastPlayDate) return 0;
   const lastPlay = new Date(data.lastPlayDate);
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - lastPlay.getTime()) / 86400000);
   if (diffDays > 7) return 0;
-  // Return total sessions as rough proxy (localStorage doesn't track per-day granularity)
   return Math.min(
     Object.values(data.games).reduce((sum, g) => sum + g.sessionsCompleted, 0),
     7
