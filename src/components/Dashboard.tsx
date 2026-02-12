@@ -151,14 +151,65 @@ export default function Dashboard({ onSelectGame, auth }: Props) {
           </div>
         )}
 
+        {/* Research summary */}
+        <div className="border-t border-navy-lighter pt-6">
+          <h2 className="text-lg font-semibold mb-4">The Science Behind BrainGames</h2>
+          <div className="text-muted text-sm leading-relaxed space-y-3 max-w-3xl">
+            <p>
+              In February 2026, researchers published the longest follow-up of a cognitive training
+              trial ever conducted. The NIH-funded ACTIVE study (Advanced Cognitive Training for
+              Independent and Vital Elderly) enrolled nearly 3,000 adults ages 65 and older beginning
+              in 1998 and tracked their outcomes for two full decades through Medicare claims data.
+            </p>
+            <p>
+              Participants were randomly assigned to one of four groups: memory training, reasoning
+              training, visual speed-of-processing training, or a no-training control. Each training
+              group completed up to ten 60–75 minute sessions over five to six weeks. Half of each
+              group also received booster sessions at 11 and 35 months after initial training.
+            </p>
+            <p>
+              The results were striking. Of the three training types, only speed-of-processing
+              training showed a significant protective effect — and only when combined with booster
+              sessions. Participants who completed both the initial speed training and the booster
+              sessions had a <span className="text-teal font-semibold">25% lower rate of dementia
+              diagnosis</span> over 20 years compared to the control group. Memory training and
+              reasoning training showed no measurable benefit.
+            </p>
+            <p>
+              Speed-of-processing training works by challenging the brain to identify objects at the
+              center of the screen while simultaneously detecting targets in the periphery, all under
+              increasing time pressure. The difficulty adapts to each person's performance, pushing
+              the threshold of how quickly the brain can accurately take in and respond to visual
+              information. Researchers believe this engages automatic, unconscious processing rather
+              than deliberate thinking, potentially strengthening neural pathways that degrade in
+              early dementia.
+            </p>
+            <p>
+              "It's really the first clear documentation in a randomized controlled trial that at
+              least some form of cognitive training can lower dementia risk," noted Dr. Thomas
+              Wisniewski of NYU Langone Health. NIH Director Jay Bhattacharya called it evidence
+              that "simple brain training, done for just weeks, may help people stay mentally healthy
+              for years longer."
+            </p>
+            <p>
+              BrainGames implements this same adaptive speed-of-processing approach: short sessions,
+              escalating difficulty, and a booster schedule modeled directly on the ACTIVE protocol.
+            </p>
+            <div className="flex flex-col gap-1 pt-2 text-xs">
+              <span className="text-muted/60 uppercase tracking-wider font-semibold mb-1">Further Reading</span>
+              <a href="https://www.nih.gov/news-events/news-releases/cognitive-speed-training-over-weeks-may-delay-diagnosis-dementia-over-decades" target="_blank" rel="noopener noreferrer" className="text-teal hover:text-teal-dim transition-colors">NIH: Cognitive Speed Training Over Weeks May Delay Dementia Over Decades</a>
+              <a href="https://www.nbcnews.com/health/aging/brain-training-game-protect-dementia-research-decades-alzheimers-rcna257790" target="_blank" rel="noopener noreferrer" className="text-teal hover:text-teal-dim transition-colors">NBC News: Brain Training Game May Protect Against Dementia for 20 Years</a>
+              <a href="https://www.hopkinsmedicine.org/news/newsroom/news-releases/2026/02/cognitive-speed-training-linked-to-lower-dementia-incidence-up-to-20-years-later" target="_blank" rel="noopener noreferrer" className="text-teal hover:text-teal-dim transition-colors">Johns Hopkins Medicine: Cognitive Speed Training Linked to Lower Dementia Incidence</a>
+            </div>
+          </div>
+        </div>
+
         {/* Disclaimer */}
         <footer className="border-t border-navy-lighter pt-6 pb-8">
           <p className="text-muted/60 text-xs leading-relaxed max-w-2xl">
-            BrainGames is inspired by the ACTIVE trial research (Alzheimer's &amp; Dementia:
-            Translational Research &amp; Clinical Interventions, Feb 2026) which found that
-            speed-of-processing training reduced dementia risk by 25% over 20 years. This application
-            is not a medical device and is not a substitute for professional medical advice or the
-            clinically validated BrainHQ platform used in the actual research trials.
+            BrainGames is not a medical device and is not a substitute for professional medical
+            advice or the clinically validated BrainHQ platform used in the actual ACTIVE research
+            trials.
           </p>
         </footer>
       </main>
