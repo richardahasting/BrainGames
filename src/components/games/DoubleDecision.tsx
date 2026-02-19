@@ -86,7 +86,7 @@ export default function DoubleDecision({ onBack }: Props) {
   // After a trial completes, show the "+" ready button (brief delay to let feedback render)
   useEffect(() => {
     if ((state.phase === 'playing' || state.phase === 'practice') && step === 'waiting') {
-      const delay = state.feedbackType ? 600 : 0;
+      const delay = state.feedbackType ? 1500 : 1500;
       timeoutRef.current = window.setTimeout(() => {
         setStep('ready');
       }, delay);
