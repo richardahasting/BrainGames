@@ -58,7 +58,7 @@ export default function DoubleDecision({ onBack }: Props) {
   const [trial, setTrial] = useState<TrialSetup | null>(null);
   const [selectedCenter, setSelectedCenter] = useState<number | null>(null);
   const [selectedPeripheral, setSelectedPeripheral] = useState<number | null>(null);
-  const [step, setStep] = useState<'waiting' | 'stimulus' | 'center-response' | 'peripheral-response'>('waiting');
+  const [step, setStep] = useState<'waiting' | 'ready' | 'stimulus' | 'center-response' | 'peripheral-response'>('waiting');
   const timeoutRef = useRef<number | null>(null);
 
   const setupTrial = useCallback(() => {
@@ -83,20 +83,25 @@ export default function DoubleDecision({ onBack }: Props) {
     setStep('waiting');
   }, [difficulty.distractorCount]);
 
-  // Auto-advance to next trial
+  // After a trial completes, show the "+" ready button (brief delay to let feedback render)
   useEffect(() => {
     if ((state.phase === 'playing' || state.phase === 'practice') && step === 'waiting') {
-      const delay = state.feedbackType ? 800 : 400;
+      const delay = state.feedbackType ? 600 : 0;
       timeoutRef.current = window.setTimeout(() => {
-        setupTrial();
-        beginTrial();
-        setStep('stimulus');
+        setStep('ready');
       }, delay);
     }
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [state.phase, state.trialIndex, step, setupTrial, beginTrial, state.feedbackType]);
+  }, [state.phase, state.trialIndex, step, state.feedbackType]);
+
+  // Called when player clicks "+" to start the next trial
+  const handleReady = useCallback(() => {
+    setupTrial();
+    beginTrial();
+    setStep('stimulus');
+  }, [setupTrial, beginTrial]);
 
   // Hide stimulus after display time
   useEffect(() => {
@@ -186,6 +191,7 @@ export default function DoubleDecision({ onBack }: Props) {
         selectedPeripheral={selectedPeripheral}
         onCenterChoice={handleCenterChoice}
         onPeripheralChoice={handlePeripheralChoice}
+        onReady={handleReady}
       />
     </GameShell>
   );
@@ -199,6 +205,7 @@ function GameArea({
   selectedPeripheral,
   onCenterChoice,
   onPeripheralChoice,
+  onReady,
 }: {
   trial: TrialSetup | null;
   step: string;
@@ -207,8 +214,24 @@ function GameArea({
   selectedPeripheral: number | null;
   onCenterChoice: (i: number) => void;
   onPeripheralChoice: (slot: number) => void;
+  onReady: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  if (step === 'ready') {
+    return (
+      <div className="flex flex-col items-center gap-3">
+        <button
+          onClick={onReady}
+          className="w-20 h-20 rounded-xl flex items-center justify-center bg-navy-lighter hover:bg-navy-light hover:ring-2 hover:ring-teal cursor-pointer transition-all"
+          title="Click to begin next trial"
+        >
+          <span className="text-teal text-4xl font-light">+</span>
+        </button>
+        <p className="text-muted text-sm">Click + when ready</p>
+      </div>
+    );
+  }
 
   if (!trial) {
     return (
